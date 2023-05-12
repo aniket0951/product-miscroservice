@@ -31,8 +31,8 @@ func (ser *userService) CreateUserAccount(userAccountData dto.CreateUserAccountD
 	}
 
 	newAccountCreate := new(models.Users).SetUsers(userAccountData)
-
-	return ser.userRepo.CreateUserAccount(newAccountCreate)
+	ser.userRepo.CreateUserAccount(newAccountCreate)
+	return nil
 }
 
 func (ser *userService) GetUserByID(userId string) (interface{}, error) {
@@ -59,5 +59,6 @@ func (ser *userService) AddUserAddress(userAddress dto.CreateUserAddressDTO) err
 	}
 
 	addressToCreate := new(models.Address).SetAddress(userAddress)
-	return ser.userRepo.AddUserAddress(addressToCreate)
+	ser.userRepo.AddUserAddress(addressToCreate)
+	return nil
 }

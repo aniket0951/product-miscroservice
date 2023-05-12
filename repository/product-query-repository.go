@@ -8,7 +8,6 @@ import (
 	"github.com/aniket0951.com/product-service/dto"
 	"github.com/aniket0951.com/product-service/helper"
 	"github.com/aniket0951.com/product-service/models"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -16,251 +15,150 @@ func (db *productRepository) Init() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.TODO(), 5*time.Second)
 }
 
-func (db *productRepository) CreateProduct(product models.Products) error {
-	ctx, cancel := db.Init()
-	defer cancel()
-	_, err := db.productCollection.InsertOne(ctx, product)
-	return err
+func (db *productRepository) CreateProduct(product models.Products) {
+	db.Product = append(db.Product, product)
 }
 
 func (db *productRepository) UpdateProduct(product dto.UpdateProductDTO) error {
 	prodObjID, _ := helper.ConvertStringToPrimitive(product.Id)
 
-	filter := bson.D{
-		bson.E{Key: "_id", Value: prodObjID},
+	for i := range db.Product {
+		if db.Product[i].Id == prodObjID {
+			sellerID, _ := primitive.ObjectIDFromHex(product.Product.SellerId)
+			db.Product[i].ProductName = product.Product.ProductName
+			db.Product[i].ProductDescription = product.Product.ProductDescription
+			db.Product[i].TotalProduct = product.Product.TotalProduct
+			db.Product[i].Price = product.Product.Price
+			db.Product[i].Colors = product.Product.Colors
+			db.Product[i].SellerId = sellerID
+			db.Product[i].UpdatedAt = primitive.NewDateTimeFromTime(time.Now())
+
+			return nil
+		}
 	}
 
-	update := bson.D{
-		bson.E{Key: "$set", Value: bson.D{
-			bson.E{Key: "pro_name", Value: product.Product.ProductName},
-			bson.E{Key: "pro_description", Value: product.Product.ProductDescription},
-			bson.E{Key: "total_pro", Value: product.Product.TotalProduct},
-			bson.E{Key: "price", Value: product.Product.Price},
-			bson.E{Key: "colors", Value: product.Product.Colors},
-			bson.E{Key: "seller_id", Value: product.Product.SellerId},
-			bson.E{Key: "updated_at", Value: primitive.NewDateTimeFromTime(time.Now())},
-		}},
-	}
+	return errors.New("product not found to update")
 
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	res, err := db.productCollection.UpdateOne(ctx, filter, update)
-
-	if res.MatchedCount == 0 {
-		return errors.New("product not found to update")
-	}
-
-	if res.ModifiedCount == 0 {
-		return errors.New("failed to update product details")
-	}
-
-	return err
 }
 
-func (db *productRepository) DeleteProduct(productId primitive.ObjectID) error {
-	ctx, cancel := db.Init()
-	defer cancel()
+func (db *productRepository) DeleteProduct(productId primitive.ObjectID) {
 
-	filter := bson.D{
-		bson.E{Key: "_id", Value: productId},
+	for i := range db.Product {
+		if db.Product[i].Id == productId {
+			db.Product = append(db.Product[:i], db.Product[i+1:]...)
+			break
+		}
 	}
-
-	_, err := db.productCollection.DeleteOne(ctx, filter)
-	return err
 }
 
-func (db *productRepository) ProductsBySeller(sellerId primitive.ObjectID) ([]models.Products, error) {
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	filter := bson.D{
-		bson.E{Key: "seller_id", Value: sellerId},
+func (db *productRepository) ProductsBySeller(sellerId primitive.ObjectID) []models.Products {
+	res := []models.Products{}
+	for i := range db.Product {
+		if db.Product[i].SellerId == sellerId {
+			res = append(res, db.Product[i])
+		}
 	}
 
-	cursor, curErr := db.productCollection.Find(ctx, filter)
-
-	if curErr != nil {
-		return nil, curErr
-	}
-
-	var products []models.Products
-
-	if err := cursor.All(context.TODO(), &products); err != nil {
-		return nil, err
-	}
-
-	return products, nil
+	return res
 }
 
 func (db *productRepository) IncreaseTotalProduct(productId primitive.ObjectID, increase int) error {
-	filter := bson.D{
-		bson.E{Key: "_id", Value: productId},
+
+	for i := range db.Product {
+		if db.Product[i].Id == productId {
+			db.Product[i].TotalProduct++
+			return nil
+		}
 	}
 
-	update := bson.D{
-		bson.E{Key: "$inc", Value: bson.D{
-			bson.E{Key: "total_pro", Value: increase},
-		}},
-	}
-
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	res, err := db.productCollection.UpdateOne(ctx, filter, update)
-
-	if res.MatchedCount == 0 {
-		return errors.New("product not found to update")
-	}
-
-	if res.ModifiedCount == 0 {
-		return errors.New("failed to update product details")
-	}
-
-	return err
+	return errors.New("product not found to update")
 }
 
 func (db *productRepository) DecreaseTotalProduct(productId primitive.ObjectID, increase int) error {
-	filter := bson.D{
-		bson.E{Key: "_id", Value: productId},
+
+	for i := range db.Product {
+		if db.Product[i].Id == productId {
+			db.Product[i].TotalProduct--
+			return nil
+		}
 	}
 
-	update := bson.D{
-		bson.E{Key: "$inc", Value: bson.D{
-			bson.E{Key: "total_pro", Value: -increase},
-		}},
-	}
+	return errors.New("product not found to update")
 
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	res, err := db.productCollection.UpdateOne(ctx, filter, update)
-
-	if res.MatchedCount == 0 {
-		return errors.New("product not found to update")
-	}
-
-	if res.ModifiedCount == 0 {
-		return errors.New("failed to update product details")
-	}
-
-	return err
 }
 
-func (db *productRepository) AddProductImg(productImg models.ProductImages) error {
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	_, err := db.productImgCollection.InsertOne(ctx, &productImg)
-
-	return err
+func (db *productRepository) AddProductImg(productImg models.ProductImages) {
+	db.ProductImages = append(db.ProductImages, productImg)
 }
 
 func (db *productRepository) ProductExitsOrNot(productId primitive.ObjectID) bool {
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	filter := bson.D{
-		bson.E{Key: "_id", Value: productId},
+	for i := range db.Product {
+		if db.Product[i].Id == productId {
+			return true
+		}
 	}
-
-	res := db.productCollection.FindOne(ctx, filter)
-
-	return res.Err() == nil
+	return false
 }
 
 // product for selling
-func (db *productRepository) SellTheProduct(productSell models.ProductsSelling) error {
-	ctx, cancel := db.Init()
-	defer cancel()
-
-	_, err := db.productSellCollection.InsertOne(ctx, productSell)
-	return err
+func (db *productRepository) SellTheProduct(productSell models.ProductsSelling) {
+	db.ProductSelling = append(db.ProductSelling, productSell)
 }
 
 func (db *productRepository) CheckProductAlreadyExits(productId primitive.ObjectID) error {
-	ctx, cancel := db.Init()
-	defer cancel()
 
-	filter := bson.D{
-		bson.E{Key: "prod_id", Value: productId},
+	for i := range db.ProductSelling {
+		if db.ProductSelling[i].ProductId == productId {
+			return errors.New("product is already in selling")
+		}
 	}
 
-	var product models.ProductsSelling
-
-	db.productSellCollection.FindOne(ctx, filter).Decode(&product)
-
-	if (product == models.ProductsSelling{}) {
-		return nil
-	}
-
-	return errors.New("product is already in selling")
+	return nil
 }
 
-func (db *productRepository) ProductsForSelling() ([]bson.M, error) {
-	ctx, cancel := db.Init()
-	defer cancel()
+func (db *productRepository) ProductsForSelling() (interface{}, error) {
 
-	filter := []bson.M{
-		{
-			"$lookup": bson.M{
-				"from":         "products",
-				"localField":   "prod_id",
-				"foreignField": "_id",
-				"as":           "products",
-			},
-		},
-		{
-			"$lookup": bson.M{
-				"from":         "categories",
-				"localField":   "cat_id",
-				"foreignField": "_id",
-				"as":           "category",
-			},
-		},
+	res := []models.ProductsForSellingResponseDTO{}
 
-		{
-			"$lookup": bson.M{
-				"from":         "product_images",
-				"localField":   "prod_id",
-				"foreignField": "prod_id",
-				"as":           "product_images",
-			},
-		},
+	for i := range db.Product {
+		temp := models.ProductsForSellingResponseDTO{}
+		temp.Products = db.Product[i]
 
-		{"$unwind": "$products"},
+		for j := range db.ProductSelling {
+			if db.ProductSelling[j].ProductId == db.Product[i].Id {
+				temp.Categories = db.GetProductCatagory(db.ProductSelling[j].CategoryId)
+				break
+			}
+		}
 
-		{
-			"$lookup": bson.M{
-				"from":         "users",
-				"localField":   "products.seller_id",
-				"foreignField": "_id",
-				"as":           "products.seller_info",
-			},
-		},
+		for k := range db.ProductImages {
+			if db.ProductImages[k].Id == db.Product[i].Id {
+				temp.ProductImages = db.GetProductImage(db.Product[i].Id)
+				break
+			}
+		}
 
-		{"$unwind": "$products.seller_info"},
+		res = append(res, temp)
+	}
+	return res, nil
+}
 
-		{
-			"$lookup": bson.M{
-				"from":         "user_address",
-				"localField":   "user_id",
-				"foreignField": "products.seller_id",
-				"as":           "products.seller_info.seller_address",
-			},
-		},
+func (db *productRepository) GetProductCatagory(catId primitive.ObjectID) models.Categories {
+	for i := range db.Categories {
+		if db.Categories[i].Id == catId {
+			return db.Categories[i]
+		}
 	}
 
-	cursor, curErr := db.productSellCollection.Aggregate(ctx, filter)
+	return models.Categories{}
+}
 
-	if curErr != nil {
-		return nil, curErr
+func (db *productRepository) GetProductImage(prodId primitive.ObjectID) models.ProductImages {
+	for i := range db.ProductImages {
+		if db.ProductImages[i].ProductId == prodId {
+			return db.ProductImages[i]
+		}
 	}
 
-	var bdata []bson.M
-	if err := cursor.All(context.TODO(), &bdata); err != nil {
-		return nil, err
-	}
-
-	return bdata, nil
+	return models.ProductImages{}
 }

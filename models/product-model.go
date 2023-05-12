@@ -87,3 +87,9 @@ func (prodSell *ProductsSelling) SetProductsSelling(moduleData dto.CreateProduct
 
 	return newProductSelling
 }
+
+type ProductsForSellingResponseDTO struct {
+	Products      Products      `json:"products"`
+	Categories    Categories    `json:"categories"`
+	ProductImages ProductImages `json:"product_images"`
+}

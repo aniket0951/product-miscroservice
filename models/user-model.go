@@ -21,7 +21,7 @@ type Users struct {
 func (user *Users) SetUsers(moduleData dto.CreateUserAccountDTO) Users {
 	newUser := Users{}
 	userContact, _ := strconv.Atoi(moduleData.Contact)
-
+	newUser.ID = primitive.NewObjectID()
 	newUser.Name = moduleData.Name
 	newUser.Contact = int64(userContact)
 	newUser.UserType = moduleData.UserType
@@ -48,7 +48,7 @@ func (address *Address) SetAddress(moduleData dto.CreateUserAddressDTO) Address 
 	newAddress := Address{}
 
 	userId, _ := primitive.ObjectIDFromHex(moduleData.UserID)
-
+	newAddress.ID = primitive.NewObjectID()
 	newAddress.AddressLine1 = moduleData.AddressLine1
 	newAddress.AddressLine2 = moduleData.AddressLine2
 	newAddress.City = moduleData.City

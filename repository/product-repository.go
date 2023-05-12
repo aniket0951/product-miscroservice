@@ -2,48 +2,40 @@ package repository
 
 import (
 	"context"
-	"os"
 
-	"github.com/aniket0951.com/product-service/config"
 	"github.com/aniket0951.com/product-service/dto"
 	"github.com/aniket0951.com/product-service/models"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-)
-
-var (
-	productConnection        = config.GetCollection(config.DB, os.Getenv("PRODUCT"))
-	productImgConnection     = config.GetCollection(config.DB, os.Getenv("PRODUCT_IMG"))
-	productSellingConnection = config.GetCollection(config.DB, os.Getenv("PRODUCT_SELL"))
 )
 
 type ProductRepository interface {
 	Init() (context.Context, context.CancelFunc)
-	CreateProduct(product models.Products) error
+	CreateProduct(product models.Products)
 	UpdateProduct(product dto.UpdateProductDTO) error
-	DeleteProduct(productId primitive.ObjectID) error
-	ProductsBySeller(sellerId primitive.ObjectID) ([]models.Products, error)
+	DeleteProduct(productId primitive.ObjectID)
+	ProductsBySeller(sellerId primitive.ObjectID) []models.Products
 	IncreaseTotalProduct(productId primitive.ObjectID, increase int) error
 	DecreaseTotalProduct(productId primitive.ObjectID, decrease int) error
-	AddProductImg(productImg models.ProductImages) error
+	AddProductImg(productImg models.ProductImages)
 	ProductExitsOrNot(productId primitive.ObjectID) bool
 
-	SellTheProduct(productSell models.ProductsSelling) error
+	SellTheProduct(productSell models.ProductsSelling)
 	CheckProductAlreadyExits(productId primitive.ObjectID) error
 
-	ProductsForSelling() ([]bson.M, error)
+	ProductsForSelling() (interface{}, error)
 }
 type productRepository struct {
-	productCollection     *mongo.Collection
-	productImgCollection  *mongo.Collection
-	productSellCollection *mongo.Collection
+	Product        []models.Products
+	ProductImages  []models.ProductImages
+	ProductSelling []models.ProductsSelling
+	Categories     []models.Categories
 }
 
 func NewProductRepository() ProductRepository {
 	return &productRepository{
-		productCollection:     productConnection,
-		productImgCollection:  productImgConnection,
-		productSellCollection: productSellingConnection,
+		Product:        []models.Products{},
+		ProductImages:  []models.ProductImages{},
+		ProductSelling: []models.ProductsSelling{},
+		Categories:     []models.Categories{},
 	}
 }

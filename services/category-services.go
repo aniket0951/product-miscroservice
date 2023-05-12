@@ -35,7 +35,8 @@ func (ser *categoryService) CreateCategory(category dto.CreateCategoriesDTO) err
 	}
 
 	categoryToCreate := new(models.Categories).SetCategories(category)
-	return ser.catRepo.CreateCategory(categoryToCreate)
+	ser.catRepo.CreateCategory(categoryToCreate)
+	return nil
 }
 
 func (ser *categoryService) UpdateCategory(category dto.UpdateCategoriesDTO) error {

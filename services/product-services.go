@@ -13,7 +13,6 @@ import (
 	"github.com/aniket0951.com/product-service/helper"
 	"github.com/aniket0951.com/product-service/models"
 	"github.com/aniket0951.com/product-service/repository"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -29,7 +28,7 @@ type ProductService interface {
 	AddProductForSell(productSell dto.CreateProductsSellingDTO) error
 	CheckProductAlreadyExits(productId string) error
 
-	ProductsForSelling() ([]bson.M, error)
+	ProductsForSelling() (interface{}, error)
 }
 
 type productService struct {
@@ -48,7 +47,8 @@ func (ser *productService) CreateProduct(product dto.CreateProductDTO) error {
 		return err
 	}
 	newProductToCreate := new(models.Products).SetProducts(product)
-	return ser.productRepo.CreateProduct(newProductToCreate)
+	ser.productRepo.CreateProduct(newProductToCreate)
+	return nil
 }
 
 func (ser *productService) UpdateProduct(product dto.UpdateProductDTO) error {
@@ -60,14 +60,16 @@ func (ser *productService) DeleteProduct(productId string) error {
 	if err != nil {
 		return err
 	}
-	return ser.productRepo.DeleteProduct(productObjId)
+	ser.productRepo.DeleteProduct(productObjId)
+	return nil
 }
 func (ser *productService) ProductsBySeller(sellerId string) ([]models.Products, error) {
 	sellerObjId, err := helper.ValidatePrimitiveId(sellerId)
 	if err != nil {
 		return nil, err
 	}
-	return ser.productRepo.ProductsBySeller(sellerObjId)
+	res := ser.productRepo.ProductsBySeller(sellerObjId)
+	return res, nil
 }
 func (ser *productService) IncreaseTotalProduct(productId string, increase int) error {
 	productObjId, err := helper.ValidatePrimitiveId(productId)
@@ -136,7 +138,9 @@ func (ser *productService) AddProductImg(productId string, file multipart.File) 
 		UpdatedAt:  primitive.NewDateTimeFromTime(time.Now()),
 	}
 
-	return ser.productRepo.AddProductImg(productImg)
+	ser.productRepo.AddProductImg(productImg)
+
+	return nil
 }
 
 func (ser *productService) AddProductForSell(productSell dto.CreateProductsSellingDTO) error {
@@ -159,7 +163,8 @@ func (ser *productService) AddProductForSell(productSell dto.CreateProductsSelli
 	}
 
 	productForSell := new(models.ProductsSelling).SetProductsSelling(productSell)
-	return ser.productRepo.SellTheProduct(productForSell)
+	ser.productRepo.SellTheProduct(productForSell)
+	return nil
 }
 
 func (ser *productService) CheckProductAlreadyExits(productId string) error {
@@ -172,6 +177,6 @@ func (ser *productService) CheckProductAlreadyExits(productId string) error {
 	return ser.productRepo.CheckProductAlreadyExits(productObjId)
 }
 
-func (ser *productService) ProductsForSelling() ([]bson.M, error) {
+func (ser *productService) ProductsForSelling() (interface{}, error) {
 	return ser.productRepo.ProductsForSelling()
 }
